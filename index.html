@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Coffee & Restaurant マイルド｜阿南市上中町のくつろぎレストラン</title>
+  <meta name="description" content="昭和感が漂うレトロ喫茶店。地元常連さん達で賑わう『Coffee & Restaurant マイルド』（徳島県阿南市上中町中原343-3）。モーニングからディナーまで楽しめる多彩なメニュー。ご予約・お問い合わせはお気軽に。">
+  <link rel="preload" as="image" href="./images/IMG_3072.jpg" fetchpriority="high" />
+
+  <style>
+    /* ===== Design tokens ===== */
+    :root{
+      --brown:#6B4E3D;
+      --caramel:#C27A43;
+      --ivory:#FAF7F2;
+      --ink:#2B2B2B;
+      --header-h:64px;         /* JSで実測反映 */
+      --gap:16px;
+      --sticky-h:56px;
+    }
+
+    html{ scroll-behavior:smooth; overflow-x:hidden; -webkit-text-size-adjust:100% }
+    *{ box-sizing:border-box }
+    body{
+      margin:0; overflow-x:hidden;
+      padding-bottom:var(--sticky-h);
+      padding-top:var(--header-h);     /* 固定ヘッダー分の押し下げ */
+      font-family:"Noto Sans JP","Yu Gothic UI","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
+      background:var(--ivory); color:var(--ink); line-height:1.7;
+      text-rendering:optimizeLegibility;
+    }
+    a{ color:var(--brown); text-decoration:none }
+    img{ max-width:100%; height:auto; display:block }
+    .container{ width:min(1080px,92%); margin:auto }
+
+    /* ===== Header (fixed) ===== */
+    header{
+      position:fixed; inset:0 0 auto 0; width:100%;
+      background:#ffffffd9; backdrop-filter:saturate(150%) blur(6px);
+      z-index:120;
+    }
+    .head{ display:flex; align-items:center; justify-content:space-between; padding:8px 0 }
+    .logo{ font-weight:700; color:var(--brown) }
+    .logo a{ display:inline-block; padding:8px 0 }
+    .nav-desktop{ display:flex; align-items:center }
+    .nav-desktop a{ margin:0 10px }
+    .cta-inline a{ display:inline-block; margin-left:8px; padding:.6rem .9rem; border-radius:999px; border:1px solid var(--brown) }
+    .cta-inline a.primary{ background:var(--brown); color:#fff }
+
+    /* ===== Burger (等間隔・前後で位置ズレなし) ===== */
+    .burger{
+      position:relative; width:48px; height:40px; display:none;
+      align-items:center; justify-content:center; background:transparent; border:0; color:var(--brown); z-index:200;
+    }
+    .burger-bars{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:30px; height:14px }
+    .hb-bar{ position:absolute; left:0; width:100%; height:2px; background:currentColor; border-radius:2px; transform-origin:50% 50%; transition: transform .28s ease, opacity .2s ease, top .28s ease }
+    .hb1{ top:0 } .hb2{ top:6px } .hb3{ top:12px }
+    .burger.is-open .hb1{ top:6px; transform:rotate(60deg) }
+    .burger.is-open .hb2{ transform:none; opacity:1 }
+    .burger.is-open .hb3{ top:6px; transform:rotate(-60deg) }
+
+    /* ===== Sections ===== */
+    section{ padding:52px 0 }
+    h2{ font-size:clamp(20px,3.6vw,28px); margin:0 0 16px; color:var(--brown); letter-spacing:.01em }
+    h3{ margin:.3em 0; letter-spacing:.01em }
+    .values{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px }
+    .grid-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px }
+    .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px }
+    .card{ background:#fff; border-radius:12px; box-shadow:0 8px 28px rgba(0,0,0,.10); border:1px solid #00000006; padding:16px }
+
+    /* ===== Hero ===== */
+    .hero{ position:relative; isolation:isolate }
+    .hero img{ width:100%; height:56vh; object-fit:cover }
+    .hero .copy{ position:absolute; inset:auto 0 10% 0; color:#fff; text-align:center; text-shadow:0 2px 10px rgba(0,0,0,.45); padding:0 10px }
+    .hero h1{ margin:.2em 0; font-size:clamp(24px,5vw,44px); white-space:nowrap } /* ← 1行に固定 */
+    .hero p{ margin:0 0 1rem }
+    .hero .buttons a{ display:inline-block; margin:.25rem; padding:.8rem 1.1rem; border-radius:999px; background:#ffffffcc; color:#6B4E3D; backdrop-filter:blur(6px); box-shadow:0 6px 14px rgba(0,0,0,.12) }
+    .hero .buttons a.primary{ background:var(--caramel); color:#fff }
+
+    /* ===== Anchor offset ===== */
+    *[id]{ scroll-margin-top: calc(var(--header-h) + 12px) }
+
+    /* ===== Mobile drawer (right slide, transparent under header) ===== */
+    .backdrop{ position:fixed; inset:0; background:radial-gradient(120% 120% at 90% 10%, rgba(0,0,0,.55), rgba(0,0,0,.35)); z-index:80; opacity:0; transition:opacity .25s ease; pointer-events:none }
+    .backdrop.show{ opacity:1; pointer-events:auto }
+    .mobile-drawer{ position:fixed; top:0; right:0; bottom:0; width:33.333vw; max-width:420px; background:transparent; z-index:180; transform:translateX(100%); transition:transform .25s ease; display:flex; pointer-events:none }
+    .mobile-drawer.open{ transform:translateX(0); pointer-events:auto }
+    .drawer-panel{
+      width:100%; height:100%;
+      background:linear-gradient(to bottom, rgba(255,255,255,0) 0, rgba(255,255,255,0) var(--header-h), #ffffffd9 var(--header-h), #ffffffd9 100%);
+      backdrop-filter:saturate(150%) blur(6px);
+      color:var(--ink); display:flex; flex-direction:column; justify-content:center; padding:8px 16px
+    }
+    .drawer-nav{ display:grid; gap:0; font-size:.98rem; line-height:1.22 }
+    .drawer-nav a{ color:var(--ink); padding:10px 12px; border-bottom:1px solid #00000014; background:transparent }
+    .drawer-nav a:hover,.drawer-nav a:active,.drawer-nav a:focus{ background:transparent; outline:none }
+
+    /* ===== Menu slider ===== */
+    .menu .section-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px }
+    .menu .slide-hint{ font-size:.9rem; color:#665; display:flex; align-items:center; gap:6px }
+    .menu .scroller{ position:relative; overflow:hidden }
+    .menu .track{ display:flex; gap:var(--gap); overflow-x:auto; -webkit-overflow-scrolling:touch; scroll-snap-type:x mandatory; padding:0 8px 8px; scrollbar-width:thin }
+    .menu .track::-webkit-scrollbar{ height:8px }
+    .menu .track::-webkit-scrollbar-thumb{ background:#c7b7a8; border-radius:999px }
+    .menu .track::-webkit-scrollbar-track{ background:#00000008; border-radius:999px }
+    .menu .card{ --card-w: clamp(260px, 28vw, 340px); flex:0 0 var(--card-w); border-radius:14px; padding:0; overflow:hidden; box-shadow:0 6px 20px #00000014; background:#fff; scroll-snap-align:start; transition:transform .25s ease, box-shadow .25s ease; position:relative }
+    .menu .card:hover{ transform:translateY(-2px) scale(1.01); box-shadow:0 10px 26px #0000001f }
+    .menu .imgwrap{ aspect-ratio:4/3; width:100%; overflow:hidden; border-radius:14px 14px 0 0; background:linear-gradient(#faf7f2,#f3eee7) }
+    .menu .imgwrap img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s ease }
+    .menu .card:hover .imgwrap img{ transform:scale(1.05) }
+    .menu .meta{ padding:14px 16px }
+    .menu .meta h3{ margin:0 0 6px; font-size:1.02rem }
+    .menu .meta p{ margin:0 }
+    .menu .badge{ position:absolute; left:10px; top:10px; background:linear-gradient(90deg,#C27A43,#A35F2E); color:#fff; font-weight:700; font-size:.82rem; padding:.25rem .55rem; border-radius:999px; box-shadow:0 4px 16px #00000022; letter-spacing:.03em }
+    .menu .badge.secondary{ background:linear-gradient(90deg,#6B4E3D,#845D49) }
+    .menu .navbtn{
+      position:absolute; top:50%; transform:translateY(-50%);
+      width:40px; height:40px; border-radius:999px; border:1px solid #00000024;
+      background:#fff; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; z-index:1000; line-height:1; font-size:24px; color:#6B4E3D;
+      box-shadow:0 10px 24px rgba(0,0,0,.15);
+      transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+    .menu .navbtn::before{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) }
+    .menu .prev{ left:8px } .menu .prev::before{ content:"‹"; transform:translate(calc(-50% - 2%), -50%) }
+    .menu .next{ right:8px } .menu .next::before{ content:"›"; transform:translate(calc(-50% + 2%), -50%) }
+    .menu .navbtn:hover{ background:#fff }
+    .menu .navbtn.is-press,.menu .navbtn:active{
+      transform:translateY(-50%) scale(.9);
+      box-shadow:inset 0 2px 6px rgba(0,0,0,.12), 0 8px 18px rgba(0,0,0,.12);
+    }
+
+    /* ===== Forms ===== */
+    form{ display:grid; gap:12px }
+    form label{ display:block; margin:.2rem 0 .1rem; font-weight:600 }
+    input,textarea,select,button{ font:inherit }
+    input,textarea,select{
+      width:100%; min-width:0;
+      padding:.78rem .9rem;
+      border:1px solid #e7e2dc; border-radius:10px; background:#fff;
+      line-height:1.4; font-size:16px; /* iOSズーム防止 */
+    }
+    textarea{ resize:vertical }
+    button{
+      cursor:pointer; border:1px solid var(--brown); border-radius:10px;
+      padding:.9rem 1.2rem; background:var(--brown); color:#fff; font-weight:700;
+      box-shadow:0 8px 18px rgba(0,0,0,.12);
+    }
+    button:hover{ filter:saturate(105%) }
+    input[type="number"]{ -moz-appearance:textfield }
+    input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
+
+    /* iOS datetime-local 幅＆高さ調整（他のボックスと統一） */
+    input[type="datetime-local"]{
+      width:100%; max-width:100%; min-width:0; box-sizing:border-box;
+      -webkit-appearance:none; appearance:none;
+      padding:.78rem .9rem; line-height:1.4; min-height:48px; height:auto; font-size:16px;
+    }
+    input[type="datetime-local"]::-webkit-date-and-time-value{ line-height:1.4; padding:0; }
+    input[type="datetime-local"]::-webkit-calendar-picker-indicator{ margin:0 4px 0 0; padding:0; }
+
+    /* ===== Info list (一行揃え) ===== */
+    section[aria-labelledby="info-title"] .card{ padding:12px 14px }
+    .info-list{
+      --label-w:8em; display:grid; grid-template-columns:var(--label-w) 1fr;
+      column-gap:12px; row-gap:6px; align-items:center; font-size:.98rem;
+      font-feature-settings:"palt" 1, "tnum" 1;
+    }
+    .info-list > div:nth-child(odd){ color:#6b645d; white-space:nowrap }
+    .info-list > div:nth-child(even){ white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+
+    /* ===== Footer & sticky notice ===== */
+    footer{ background:#fff; color:#555; border-top:1px solid #0001 }
+    .foot-inner{ padding:24px 0; display:grid; gap:10px }
+    .sticky-cta{
+      position:fixed; left:0; right:0; bottom:0; height:var(--sticky-h);
+      display:flex; align-items:flex-start; justify-content:flex-start;
+      padding:12px 14px; background:linear-gradient(90deg,#FFF4E9 0%, #FFF8F1 60%, #FFFBF6 100%);
+      border-top:1px solid #EADCCE; z-index:130;
+    }
+    .sticky-cta small{ font-size:.9rem; color:#6B4E3D; letter-spacing:.02em; opacity:.95 }
+
+    /* ===== Responsive ===== */
+    @media (max-width:900px){
+      .values,.grid-2,.grid-3{ grid-template-columns:1fr }
+      .hero img{ height:46vh }
+      .nav-desktop,.cta-inline{ display:none }
+      .burger{ display:inline-flex !important }
+      .menu .card{ --card-w: clamp(240px, 74vw, 340px) }
+    }
+    @media (max-width:480px){
+      .hero h1{ font-size: clamp(18px, 5.0vw, 34px) } /* さらに溢れ防止 */
+    }
+
+    /* ===== Focus visibility ===== */
+    :focus-visible{ outline:2px solid rgba(194,122,67,.45); outline-offset:2px; border-radius:8px }
+
+    /* ===== Reduced motion ===== */
+    @media (prefers-reduced-motion: reduce){
+      .hb-bar, .mobile-drawer, .backdrop, .menu .card, .menu .imgwrap img, .menu .navbtn{ transition:none !important; }
+    }
+
+    /* ===== Inline editor (host bridge) ===== */
+    .m-editor-fab{
+      position:fixed; right:14px; bottom:calc(14px + var(--sticky-h,56px));
+      z-index:9998; width:44px; height:44px; border-radius:999px;
+      display:grid; place-items:center; background:#fff; color:#6B4E3D;
+      border:1px solid #0002; box-shadow:0 8px 24px rgba(0,0,0,.18); cursor:pointer; font-weight:700;
+      font-size:12px; line-height:1; letter-spacing:.02em; white-space:nowrap; text-align:center; padding:0;
+    }
+    @media (max-width:900px){ .m-editor-fab{ bottom:14px } }
+    .m-ed-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:9999; display:none }
+    .m-ed-overlay.show{ display:block }
+    .m-ed-frame{ position:absolute; top:0; right:0; width:min(420px,94vw); height:100%; border:0; background:#fff; box-shadow:-16px 0 40px rgba(0,0,0,.16) }
+  </style>
+
+  <!-- Schema.org -->
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"Restaurant","name":"Coffee & Restaurant マイルド","address":{"@type":"PostalAddress","streetAddress":"上中町中原343-3","addressLocality":"阿南市","addressRegion":"徳島県","addressCountry":"JP"},"telephone":"+81-884-23-0451","openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],"opens":"08:00","closes":"20:30"}],"servesCuisine":["Cafe","Western","Japanese"],"image":["./imges/IMG_3072.jpg"]}
+  </script>
+</head>
+<body>
+  <a id="top"></a>
+
+  <!-- ===== Header ===== -->
+  <header>
+    <div class="container head">
+      <div class="logo"><a href="#top" aria-label="トップへ">Coffee &amp; Restaurant マイルド</a></div>
+
+      <nav class="nav-desktop" aria-label="主要ナビゲーション">
+        <a href="#values-title">3つの理由</a>
+        <a href="#menu-title">メニュー</a>
+        <a href="#first-title">初めての方へ</a>
+        <a href="#news-title">お知らせ</a>
+        <a href="#reviews-title">口コミ</a>
+        <a href="#info-title">店舗情報</a>
+        <a href="#map-title">アクセス</a>
+      </nav>
+
+      <nav class="cta-inline" aria-label="主要アクション">
+        <a class="primary" href="#reserve">予約する</a>
+        <a href="#contact">問い合わせ</a>
+      </nav>
+
+      <button class="burger" type="button" aria-label="メニューを開く" aria-controls="mobileMenu" aria-expanded="false">
+        <span class="burger-bars" aria-hidden="true">
+          <span class="hb-bar hb1"></span>
+          <span class="hb-bar hb2"></span>
+          <span class="hb-bar hb3"></span>
+        </span>
+      </button>
+    </div>
+
+    <div class="backdrop" hidden></div>
+    <aside id="mobileMenu" class="mobile-drawer" role="dialog" aria-modal="true" aria-label="メニュー" hidden>
+      <div class="drawer-panel">
+        <nav class="drawer-nav" aria-label="モバイルメニュー">
+          <a href="#top">トップ</a>
+          <a href="#values-title">3つの理由</a>
+          <a href="#menu-title">メニュー</a>
+          <a href="#first-title">初めての方へ</a>
+          <a href="#news-title">お知らせ</a>
+          <a href="#reviews-title">口コミ</a>
+          <a href="#info-title">店舗情報</a>
+          <a href="#map-title">アクセス</a>
+          <a href="#reserve">予約する</a>
+          <a href="#contact">問い合わせ</a>
+        </nav>
+      </div>
+    </aside>
+  </header>
+
+  <!-- ===== Main ===== -->
+  <main>
+    <!-- Hero -->
+    <section class="hero" aria-label="ファーストビュー">
+      <img src="./images/IMG_3072.jpg" alt="Coffee & Restaurant マイルド（外観）" loading="eager">
+      <div class="copy">
+        <p>阿南・上中町のくつろぎレストラン</p>
+        <h1>いつもの一日を、ちょっと上質に。</h1>
+        <div class="buttons">
+          <a class="primary" href="#reserve">空席確認・予約</a>
+          <a href="#contact">問い合わせ</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Values -->
+    <section aria-labelledby="values-title">
+      <div class="container">
+        <h2 id="values-title">選ばれる3つの理由</h2>
+        <div class="values">
+          <div class="card"><h3>多彩なメニュー</h3><p>モーニングからディナーまで、世代を問わず楽しめるラインアップ。</p></div>
+          <div class="card"><h3>アクセス良好</h3><p>徳島県阿南市上中町中原343-3。駐車場16台でお車でも安心。</p></div>
+          <div class="card"><h3>落ち着いた世界観</h3><p>昭和感が漂うレトロ喫茶店。地元常連さん達で賑わう居心地。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Menu (slider) -->
+    <section aria-labelledby="menu-title" class="menu">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="menu-title">看板メニュー</h2>
+          <p class="slide-hint" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="#6B4E3D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            左右にスライドできます
+          </p>
+        </div>
+
+        <div class="scroller">
+          <div class="track" id="menuTrack">
+            <article class="card">
+              <span class="badge">人気</span>
+              <div class="imgwrap"><img src="./images/デミグラスハンバーグ.jpg" alt="自家製デミグラスのハンバーグ" loading="lazy" decoding="async" width="1200" height="900"></div>
+              <div class="meta"><h3>自家製デミグラスのハンバーグ</h3><p>コク深いソースがジューシーな旨みを引き立てます。</p></div>
+            </article>
+
+            <article class="card">
+              <span class="badge secondary">定番</span>
+              <div class="imgwrap"><img src="./images/ふわとろオムライス.jpg" alt="ふわとろオムライス" loading="lazy" decoding="async" width="1200" height="900"></div>
+              <div class="meta"><h3>ふわとろオムライス</h3><p>とろける卵と特製ソースのハーモニー。</p></div>
+            </article>
+
+            <article class="card">
+              <div class="imgwrap"><img src="./images/季節のパスタ.jpg" alt="季節のパスタ" loading="lazy" decoding="async" width="1200" height="900"></div>
+              <div class="meta"><h3>季節のパスタ</h3><p>旬の素材をシンプルに、香り高く。</p></div>
+            </article>
+
+            <article class="card">
+              <div class="imgwrap"><img src="./images/カレー＆ピラフ.jpg" alt="カレー＆ピラフ" loading="lazy" decoding="async" width="1200" height="900"></div>
+              <div class="meta"><h3>カレー＆ピラフ</h3><p>懐かしい喫茶店の味を、できたてで。</p></div>
+            </article>
+
+            <article class="card">
+              <div class="imgwrap"><img src="./images/ホットケーキ.jpg" alt="ホットケーキ" loading="lazy" decoding="async" width="1200" height="900"></div>
+              <div class="meta"><h3>ホットケーキ</h3><p>厚焼きふかふか。+¥100でバニラアイス添えも。</p></div>
+            </article>
+
+            <article class="card">
+              <div class="imgwrap"><img src="./images/ブレンドコーヒー.jpg" alt="ブレンドコーヒー" loading="lazy" decoding="async" width="1200" height="900"></div>
+              <div class="meta"><h3>ブレンドコーヒー</h3><p>有機JAS認証の有機栽培珈琲豆を使用。</p></div>
+            </article>
+          </div>
+
+          <button class="navbtn prev" type="button" aria-label="前へ"></button>
+          <button class="navbtn next" type="button" aria-label="次へ"></button>
+        </div>
+
+        <p class="scroll-hint" style="margin-top:8px; color:#665">※ 価格・詳細は今後オンラインメニューに追加予定です。</p>
+      </div>
+    </section>
+
+    <!-- News -->
+    <section aria-labelledby="news-title">
+      <div class="container">
+        <h2 id="news-title">お知らせ</h2>
+        <ul class="news">
+          <li>営業時間：8:00〜20:30（ラストオーダーは状況により）</li>
+          <li>駐車場：店舗前に16台分ございます</li>
+          <li>最新情報は店頭・お電話でご確認ください（<a href="tel:0884230451">0884-23-0451</a>）</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Reviews -->
+    <section aria-labelledby="reviews-title">
+      <div class="container">
+        <h2 id="reviews-title">口コミ</h2>
+        <div class="grid-3">
+          <blockquote class="card">昭和感が漂うレトロ喫茶店。地元常連さん達で賑わっています。</blockquote>
+          <blockquote class="card">広い駐車場で入りやすく、居心地も良いです。</blockquote>
+          <blockquote class="card">モーニングもスイーツも充実。つい長居してしまう空間。</blockquote>
+        </div>
+      </div>
+    </section>
+
+    <!-- Info -->
+    <section aria-labelledby="info-title">
+      <div class="container">
+        <h2 id="info-title">店舗情報</h2>
+        <div class="card">
+          <div class="info-list">
+            <div>店名</div><div>Coffee &amp; Restaurant マイルド</div>
+            <div>住所</div><div>徳島県阿南市上中町中原343-3</div>
+            <div>営業時間</div><div>8:00〜20:30</div>
+            <div>席数</div><div>30席</div>
+            <div>駐車場</div><div>16台</div>
+            <div>電話</div><div><a href="tel:0884230451">0884-23-0451</a></div>
+            <div>禁煙/喫煙</div><div>店内は状況によりご案内</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Map -->
+    <section aria-labelledby="map-title">
+      <div class="container">
+        <h2 id="map-title">アクセス</h2>
+        <div class="card">
+          <div style="position:relative;overflow:hidden;border-radius:12px">
+            <iframe
+              title="Coffee & Restaurant マイルド 地図"
+              src="https://www.google.com/maps?q=徳島県阿南市上中町中原343-3&output=embed"
+              width="100%" height="450" style="border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reserve -->
+    <section id="reserve" aria-labelledby="reserve-title">
+      <div class="container">
+        <h2 id="reserve-title">ご予約</h2>
+        <div class="card">
+          <form action="mailto:info@example.com" method="post" enctype="text/plain">
+            <label for="r-name">お名前</label>
+            <input id="r-name" name="お名前" type="text" required>
+
+            <label for="r-phone">お電話番号</label>
+            <input id="r-phone" name="電話" type="tel" placeholder="0884-23-0451" required>
+
+            <label for="r-count">人数</label>
+            <input id="r-count" name="人数" type="number" min="1" max="20" required>
+
+            <label for="r-dt">ご来店日時</label>
+            <input id="r-dt" name="日時" type="datetime-local" required>
+
+            <label for="r-note">ご要望</label>
+            <textarea id="r-note" name="ご要望" rows="4" placeholder="席の希望などがあればご記入ください"></textarea>
+
+            <p class="helper">※ 送信後に店舗から確認のご連絡を差し上げます。</p>
+            <button type="submit">予約を送信</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" aria-labelledby="contact-title">
+      <div class="container">
+        <h2 id="contact-title">お問い合わせ</h2>
+        <div class="card">
+          <form action="mailto:info@example.com" method="post" enctype="text/plain">
+            <label for="c-name">お名前</label>
+            <input id="c-name" name="お名前" type="text" required>
+
+            <label for="c-email">メール</label>
+            <input id="c-email" name="メール" type="email" required>
+
+            <label for="c-msg">内容</label>
+            <textarea id="c-msg" name="内容" rows="5" required></textarea>
+
+            <p class="helper">お急ぎの方は <a href="tel:0884230451">0884-23-0451</a> までお電話ください。</p>
+            <button type="submit">送信</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container foot-inner">
+      <small>© Coffee &amp; Restaurant マイルド / 徳島県阿南市上中町中原343-3</small>
+    </div>
+  </footer>
+
+  <!-- Notice -->
+  <div class="sticky-cta" role="region" aria-label="固定アクション">
+    <small>キャンペーン企画</small>
+  </div>
+
+  <!-- ===== JS：header height / drawer / slider ===== -->
+  <script>
+    (function(){
+      const root=document.documentElement;
+      const header=document.querySelector('header');
+      const btn=document.querySelector('.burger');
+      const drawer=document.getElementById('mobileMenu');
+      const backdrop=document.querySelector('.backdrop');
+
+      function setHeaderOffset(){
+        if(!header) return;
+        const h=header.getBoundingClientRect().height;
+        root.style.setProperty('--header-h', Math.round(h)+'px');
+      }
+      addEventListener('load',setHeaderOffset);
+      addEventListener('resize',setHeaderOffset);
+      setTimeout(setHeaderOffset,300);
+
+      function openDrawer(){
+        drawer.hidden=false; backdrop.hidden=false;
+        requestAnimationFrame(()=>{ drawer.classList.add('open'); backdrop.classList.add('show'); });
+        btn?.classList.add('is-open'); btn?.setAttribute('aria-expanded','true');
+      }
+      function closeDrawer(){
+        drawer.classList.remove('open'); backdrop.classList.remove('show');
+        btn?.classList.remove('is-open'); btn?.setAttribute('aria-expanded','false');
+        setTimeout(()=>{ drawer.hidden=true; backdrop.hidden=true; btn?.focus(); },250);
+      }
+      btn?.addEventListener('click', ()=> (btn.getAttribute('aria-expanded')==='true'?closeDrawer():openDrawer()));
+      backdrop?.addEventListener('click', closeDrawer);
+      addEventListener('keydown', e=>{ if(e.key==='Escape' && btn?.getAttribute('aria-expanded')==='true') closeDrawer(); });
+
+      /* Menu slider */
+      const track=document.getElementById('menuTrack');
+      const prev=document.querySelector('.menu .prev');
+      const next=document.querySelector('.menu .next');
+      function step(){
+        const card=track.querySelector('.card');
+        const gap=parseInt(getComputedStyle(track).gap||'16',10);
+        return card? card.getBoundingClientRect().width + gap : 300;
+      }
+      function go(dir){ track.scrollBy({ left: dir*step(), behavior:'smooth' }); }
+      prev?.addEventListener('click', ()=>go(-1));
+      next?.addEventListener('click', ()=>go(1));
+      [prev,next].forEach(el=>{
+        if(!el) return;
+        const on=()=>el.classList.add('is-press'), off=()=>el.classList.remove('is-press');
+        el.addEventListener('mousedown',on); el.addEventListener('mouseup',off); el.addEventListener('mouseleave',off);
+        el.addEventListener('touchstart',on,{passive:true}); el.addEventListener('touchend',off,{passive:true}); el.addEventListener('touchcancel',off,{passive:true});
+      });
+    })();
+  </script>
+
+  <!-- ===== Inline editor host bridge (editor.html を同階層に配置) ===== -->
+  <button class="m-editor-fab" type="button" title="編集モード">編集</button>
+  <div class="m-ed-overlay" id="m-ed-overlay" aria-hidden="true">
+    <iframe class="m-ed-frame" id="m-ed-frame" src="./editor.html" title="編集パネル"></iframe>
+  </div>
+  <script>
+    (function(){
+      const ORIGIN = location.origin;
+      const overlay = document.getElementById('m-ed-overlay');
+      const frame   = document.getElementById('m-ed-frame');
+      const fab     = document.querySelector('.m-editor-fab');
+      const STORE_KEY='mildSiteContent.v3';
+
+      const $  =(s,ctx=document)=>ctx.querySelector(s);
+      const $$ =(s,ctx=document)=>Array.from(ctx.querySelectorAll(s));
+
+      const MAP = [
+        {key:'site.logo', sel:'.logo a'},
+        {key:'hero.kicker', sel:'.hero .copy p'},
+        {key:'hero.title',  sel:'.hero h1'},
+        {key:'menu.1.title', sel:'.menu .card:nth-child(1) h3'},
+        {key:'menu.1.desc',  sel:'.menu .card:nth-child(1) .meta p'},
+        {key:'menu.2.title', sel:'.menu .card:nth-child(2) h3'},
+        {key:'menu.2.desc',  sel:'.menu .card:nth-child(2) .meta p'},
+        {key:'menu.3.title', sel:'.menu .card:nth-child(3) h3'},
+        {key:'menu.3.desc',  sel:'.menu .card:nth-child(3) .meta p'},
+        {key:'menu.4.title', sel:'.menu .card:nth-child(4) h3'},
+        {key:'menu.4.desc',  sel:'.menu .card:nth-child(4) .meta p'},
+        {key:'menu.5.title', sel:'.menu .card:nth-child(5) h3'},
+        {key:'menu.5.desc',  sel:'.menu .card:nth-child(5) .meta p'},
+        {key:'menu.6.title', sel:'.menu .card:nth-child(6) h3'},
+        {key:'menu.6.desc',  sel:'.menu .card:nth-child(6) .meta p'},
+        {key:'info.name',  sel:'section[aria-labelledby="info-title"] .info-list > div:nth-child(2)'},
+        {key:'info.addr',  sel:'section[aria-labelledby="info-title"] .info-list > div:nth-child(4)'},
+        {key:'info.open',  sel:'section[aria-labelledby="info-title"] .info-list > div:nth-child(6)'},
+        {key:'info.seats', sel:'section[aria-labelledby="info-title"] .info-list > div:nth-child(8)'},
+        {key:'info.park',  sel:'section[aria-labelledby="info-title"] .info-list > div:nth-child(10)'}
+      ];
+      const IMG_MAP = [
+        {key:'menu.1.img', sel:'.menu .card:nth-child(1) .imgwrap img'},
+        {key:'menu.2.img', sel:'.menu .card:nth-child(2) .imgwrap img'},
+        {key:'menu.3.img', sel:'.menu .card:nth-child(3) .imgwrap img'},
+        {key:'menu.4.img', sel:'.menu .card:nth-child(4) .imgwrap img'},
+        {key:'menu.5.img', sel:'.menu .card:nth-child(5) .imgwrap img'},
+        {key:'menu.6.img', sel:'.menu .card:nth-child(6) .imgwrap img'}
+      ];
+      const LIST = {
+        news: {
+          get: ()=> $$('.news li').map(li=>li.textContent.trim()),
+          set: (items)=>{
+            const ul=$('.news'); if(!ul) return;
+            ul.innerHTML=''; items.forEach(t=>{ const li=document.createElement('li'); li.textContent=t; ul.append(li); });
+          }
+        },
+        reviews: {
+          get: ()=> $$('.grid-3 blockquote', $('section[aria-labelledby="reviews-title"]')).map(q=>q.textContent.trim()),
+          set: (items)=>{
+            const wrap=$('section[aria-labelledby="reviews-title"] .grid-3'); if(!wrap) return;
+            wrap.innerHTML=''; items.forEach(t=>{ const q=document.createElement('blockquote'); q.className='card'; q.textContent=t; wrap.append(q); });
+          }
+        }
+      };
+
+      function setText(key, val){ const m=MAP.find(x=>x.key===key); const el=m? $(m.sel):null; if(el) el.textContent=String(val??''); }
+      function setImage(key, dataURL){ const m=IMG_MAP.find(x=>x.key===key); const img=m? $(m.sel):null; if(img && dataURL) img.src=dataURL; }
+
+      function collectAll(){
+        const text={}; MAP.forEach(m=>{ const el=$(m.sel); text[m.key]=el? el.textContent.trim():''; });
+        const images={}; IMG_MAP.forEach(m=>{ const img=$(m.sel); images[m.key]= img? (img.currentSrc||img.src):''; });
+        return { text, images, news: LIST.news.get(), reviews: LIST.reviews.get() };
+      }
+      function applyAll(all){
+        if(all.text) Object.entries(all.text).forEach(([k,v])=> setText(k,v));
+        if(all.images) Object.entries(all.images).forEach(([k,src])=> setImage(k,src));
+        if(all.news) LIST.news.set(all.news);
+        if(all.reviews) LIST.reviews.set(all.reviews);
+      }
+
+      function saveAll(){
+        localStorage.setItem(STORE_KEY, JSON.stringify(collectAll()));
+        return true;
+      }
+      function loadAll(){
+        const raw=localStorage.getItem(STORE_KEY); if(!raw) return null;
+        try{ return JSON.parse(raw); }catch(_){ return null; }
+      }
+      function exportHTML(){
+        const all=collectAll();
+        const doc=document.documentElement.cloneNode(true);
+        /* テキスト/画像反映 */
+        Object.entries(all.text).forEach(([k,v])=>{ const m=MAP.find(x=>x.key===k); const el=m? doc.querySelector(m.sel):null; if(el) el.textContent=v; });
+        Object.entries(all.images).forEach(([k,src])=>{ const m=IMG_MAP.find(x=>x.key===k); const img=m? doc.querySelector(m.sel):null; if(img && src) img.setAttribute('src',src); });
+        /* リスト反映 */
+        const ul=doc.querySelector('section[aria-labelledby="news-title"] .news');
+        if(ul){ ul.innerHTML=''; all.news.forEach(t=>{ const li=doc.createElement('li'); li.textContent=t; ul.appendChild(li); }); }
+        const rv=doc.querySelector('section[aria-labelledby="reviews-title"] .grid-3');
+        if(rv){ rv.innerHTML=''; all.reviews.forEach(t=>{ const q=doc.createElement('blockquote'); q.className='card'; q.textContent=t; rv.appendChild(q); }); }
+        /* 編集UI除去 */
+        doc.querySelectorAll('.m-editor-fab,.m-ed-overlay').forEach(el=>el.remove());
+        const html='<!doctype html>\n'+doc.outerHTML;
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+        a.download='index-edited.html'; a.click(); URL.revokeObjectURL(a.href);
+      }
+
+      function openPanel(){ overlay.classList.add('show'); overlay.setAttribute('aria-hidden','false'); post('hostReady', collectAll()); }
+      function closePanel(){ overlay.classList.remove('show'); overlay.setAttribute('aria-hidden','true'); }
+      function post(type, payload){ frame.contentWindow && frame.contentWindow.postMessage({type,payload}, ORIGIN); }
+
+      /* Messaging */
+      window.addEventListener('message', (e)=>{
+        if (location.protocol !== 'file:' && e.origin !== ORIGIN) return;
+        const {type, payload} = e.data || {};
+        switch(type){
+          case 'editorReady': post('syncState', collectAll()); break;
+          case 'setText': setText(payload.key, payload.value); break;
+          case 'setImage': setImage(payload.key, payload.dataURL); break;
+          case 'setNews': LIST.news.set(payload.items||[]); break;
+          case 'setReviews': LIST.reviews.set(payload.items||[]); break;
+          case 'saveAll': post('saved', {ok: saveAll()}); break;
+          case 'loadAll': {
+            const data=loadAll();
+            if(data){ applyAll(data); post('loaded',{ok:true,data}); }
+            else{ post('loaded',{ok:false}); }
+            break;
+          }
+          case 'exportHTML': exportHTML(); break;
+          case 'exportJSON': {
+            const all=collectAll();
+            const a=document.createElement('a');
+            a.href=URL.createObjectURL(new Blob([JSON.stringify(all,null,2)],{type:'application/json'}));
+            a.download='mild-content.json'; a.click(); URL.revokeObjectURL(a.href);
+            break;
+          }
+          case 'close': closePanel(); break;
+        }
+      });
+
+      /* Launch / close */
+      const qs=new URLSearchParams(location.search);
+      const isEdit=qs.get('edit')==='1';
+      if (fab) fab.style.display = isEdit ? 'grid' : 'none';   /* 本番では非表示、?edit=1で表示 */
+      fab.addEventListener('click', openPanel);
+      overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closePanel(); });
+
+      /* Logo triple-tap -> edit mode (iPhone運用用) */
+      let tapCount=0, tapTimer=null;
+      const logo=document.querySelector('.logo a');
+      if(logo){
+        logo.addEventListener('click',(e)=>{
+          tapCount++; clearTimeout(tapTimer); tapTimer=setTimeout(()=>tapCount=0,450);
+          if(tapCount>=3){ e.preventDefault(); qs.set('edit','1'); location.search=qs.toString(); }
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
