@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MILD Editor</title>
+<style>
+  :root{
+    --brown:#6B4E3D; --ivory:#FAF7F2; --ink:#2B2B2B;
+    --line:#e7e2dc; --muted:#6b645d;
+  }
+  html,body{margin:0;height:100%;}
+  body{font-family:"Noto Sans JP","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;background:#fff;color:var(--ink);line-height:1.6;}
+
+  /* Header */
+  .bar{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;padding:10px 12px}
+  .bar h1{font-size:16px;margin:0;color:var(--brown);flex:1}
+  .bar .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:.5rem .8rem;font:inherit;cursor:pointer}
+  .bar .btn.primary{background:var(--brown);color:#fff;border-color:var(--brown)}
+  .bar .btn.ghost{background:#fff;color:var(--brown)}
+
+  /* Tabs */
+  .tabs{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:48px;z-index:4}
+  .tab{appearance:none;background:#fff;border:1px solid var(--line);border-radius:999px;padding:.4rem .8rem;cursor:pointer}
+  .tab[aria-selected="true"]{background:#FAF7F2;border-color:#d9d0c8;color:var(--brown);font-weight:700}
+
+  /* Panel */
+  .panel{display:none;padding:14px 12px 80px}
+  .panel[aria-hidden="false"]{display:block}
+
+  /* Forms */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid-1{display:grid;grid-template-columns:1fr;gap:12px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+  label{display:block;font-weight:700;color:#4b443e;margin-bottom:6px}
+  input[type="text"],textarea{width:100%;padding:.75rem .8rem;border:1px solid #ddd;border-radius:10px;font:inherit}
+  textarea{min-height:92px;resize:vertical}
+  .help{font-size:.9rem;color:#6b645d;margin:.2rem 0 0}
+
+  /* Menu image row */
+  .menu-grid{display:grid;grid-template-columns:1fr;gap:12px}
+  .menu-row{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:start;border:1px dashed #e9e2da;border-radius:12px;padding:10px}
+  .thumb{width:120px;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#f6f1ea;border:1px solid #eee}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .file{font-size:.9rem}
+  .file input{display:block;margin-top:6px}
+
+  /* Lists */
+  .list-edit{display:grid;gap:8px}
+  .list-item{display:grid;grid-template-columns:1fr auto;gap:8px}
+  .list-item input{padding:.6rem .7rem;border:1px solid #ddd;border-radius:10px;font:inherit}
+  .icon-btn{border:1px solid #ddd;background:#fff;border-radius:10px;padding:.55rem .7rem;cursor:pointer}
+  .addline{margin-top:6px}
+  .addline button{border:1px dashed #cbb7a8;background:#fff;color:var(--brown);padding:.55rem .8rem;border-radius:10px;cursor:pointer}
+
+  /* Footer actions */
+  .dock{position:sticky;bottom:0;z-index:6;background:linear-gradient(#ffffffcc,#ffffff);backdrop-filter:blur(6px);border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;padding:10px 12px}
+  .dock .spacer{flex:1}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;border-radius:10px;padding:.65rem .9rem;font:inherit;cursor:pointer}
+  .btn.primary{background:var(--brown);color:#fff;border-color:var(--brown)}
+  .btn.warn{background:#fff3f0;border-color:#f6d0c6;color:#a23}
+  .btn.ghost{background:#fff;color:var(--brown)}
+
+  /* Toast */
+  .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#333;color:#fff;border-radius:999px;padding:.55rem .9rem;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .2s}
+  .toast.show{opacity:1}
+
+  /* Mobile */
+  @media (max-width:900px){
+    .grid{grid-template-columns:1fr}
+    .menu-row{grid-template-columns:96px 1fr}
+    .thumb{width:96px}
+  }
+</style>
+</head>
+<body>
+  <!-- Top bar -->
+  <div class="bar">
+    <h1>編集パネル</h1>
+    <button class="btn ghost" id="btnProd" title="?edit を外して親ページを再読み込み">本番表示</button>
+    <button class="btn" id="btnClose">閉じる</button>
+    <div class="spacer"></div>
+    <button class="btn" id="btnLoad">読込</button>
+    <button class="btn primary" id="btnSave">保存</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true"  data-tab="basic">基本</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="menu">メニュー</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="news">お知らせ</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="reviews">口コミ</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="export">保存・書き出し</button>
+  </div>
+
+  <!-- Panels -->
+  <section class="panel" id="panel-basic" aria-hidden="false">
+    <div class="grid">
+      <div class="card">
+        <label for="site.logo">サイト名（ロゴ）</label>
+        <input id="site.logo" type="text" placeholder="例：Coffee & Restaurant マイルド">
+      </div>
+      <div class="card">
+        <label for="hero.kicker">ヒーロー・小見出し</label>
+        <input id="hero.kicker" type="text" placeholder="例：阿南・上中町のくつろぎレストラン">
+      </div>
+      <div class="card grid-1" style="grid-column:1 / -1">
+        <label for="hero.title">ヒーロー・大見出し</label>
+        <input id="hero.title" type="text" placeholder="例：いつもの一日を、ちょっと上質に。">
+        <p class="help">※ iPhoneでは自動的に1行に収まるよう調整済みです。</p>
+      </div>
+      <div class="card">
+        <label for="info.name">店名</label>
+        <input id="info.name" type="text" placeholder="Coffee & Restaurant マイルド">
+      </div>
+      <div class="card">
+        <label for="info.addr">住所</label>
+        <input id="info.addr" type="text" placeholder="徳島県阿南市上中町中原343-3">
+      </div>
+      <div class="card">
+        <label for="info.open">営業時間</label>
+        <input id="info.open" type="text" placeholder="8:00〜20:30">
+      </div>
+      <div class="card">
+        <label for="info.seats">席数</label>
+        <input id="info.seats" type="text" placeholder="30席">
+      </div>
+      <div class="card">
+        <label for="info.park">駐車場</label>
+        <input id="info.park" type="text" placeholder="16台">
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-menu" aria-hidden="true">
+    <div class="menu-grid">
+      <!-- Six menu rows -->
+      <div class="menu-row" data-idx="1">
+        <div class="thumb"><img id="menu.1.img" alt="menu1"></div>
+        <div>
+          <div class="card">
+            <label for="menu.1.title">タイトル</label>
+            <input id="menu.1.title" type="text" placeholder="自家製デミグラスのハンバーグ">
+          </div>
+          <div class="card">
+            <label for="menu.1.desc">説明</label>
+            <textarea id="menu.1.desc" placeholder="コク深いソースがジューシーな旨みを引き立てます。"></textarea>
+          </div>
+          <div class="file">
+            <label>画像（推奨 1200×900 / 4:3）</label>
+            <input type="file" accept="image/*" data-file="menu.1.img">
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-row" data-idx="2">
+        <div class="thumb"><img id="menu.2.img" alt="menu2"></div>
+        <div>
+          <div class="card"><label for="menu.2.title">タイトル</label><input id="menu.2.title" type="text" placeholder="ふわとろオムライス"></div>
+          <div class="card"><label for="menu.2.desc">説明</label><textarea id="menu.2.desc" placeholder="とろける卵と特製ソースのハーモニー。"></textarea></div>
+          <div class="file"><label>画像</label><input type="file" accept="image/*" data-file="menu.2.img"></div>
+        </div>
+      </div>
+
+      <div class="menu-row" data-idx="3">
+        <div class="thumb"><img id="menu.3.img" alt="menu3"></div>
+        <div>
+          <div class="card"><label for="menu.3.title">タイトル</label><input id="menu.3.title" type="text" placeholder="季節のパスタ"></div>
+          <div class="card"><label for="menu.3.desc">説明</label><textarea id="menu.3.desc" placeholder="旬の素材をシンプルに、香り高く。"></textarea></div>
+          <div class="file"><label>画像</label><input type="file" accept="image/*" data-file="menu.3.img"></div>
+        </div>
+      </div>
+
+      <div class="menu-row" data-idx="4">
+        <div class="thumb"><img id="menu.4.img" alt="menu4"></div>
+        <div>
+          <div class="card"><label for="menu.4.title">タイトル</label><input id="menu.4.title" type="text" placeholder="カレー＆ピラフ"></div>
+          <div class="card"><label for="menu.4.desc">説明</label><textarea id="menu.4.desc" placeholder="懐かしい喫茶店の味を、できたてで。"></textarea></div>
+          <div class="file"><label>画像</label><input type="file" accept="image/*" data-file="menu.4.img"></div>
+        </div>
+      </div>
+
+      <div class="menu-row" data-idx="5">
+        <div class="thumb"><img id="menu.5.img" alt="menu5"></div>
+        <div>
+          <div class="card"><label for="menu.5.title">タイトル</label><input id="menu.5.title" type="text" placeholder="ホットケーキ"></div>
+          <div class="card"><label for="menu.5.desc">説明</label><textarea id="menu.5.desc" placeholder="厚焼きふかふか。+¥100でバニラアイス添えも。"></textarea></div>
+          <div class="file"><label>画像</label><input type="file" accept="image/*" data-file="menu.5.img"></div>
+        </div>
+      </div>
+
+      <div class="menu-row" data-idx="6">
+        <div class="thumb"><img id="menu.6.img" alt="menu6"></div>
+        <div>
+          <div class="card"><label for="menu.6.title">タイトル</label><input id="menu.6.title" type="text" placeholder="ブレンドコーヒー"></div>
+          <div class="card"><label for="menu.6.desc">説明</label><textarea id="menu.6.desc" placeholder="有機JAS認証の有機栽培珈琲豆を使用。"></textarea></div>
+          <div class="file"><label>画像</label><input type="file" accept="image/*" data-file="menu.6.img"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-news" aria-hidden="true">
+    <div class="card">
+      <label>お知らせ一覧</label>
+      <div id="newsList" class="list-edit"></div>
+      <div class="addline"><button id="addNews" type="button">＋ 行を追加</button></div>
+      <p class="help">入力欄が空の行は保存時に自動で除外されます。</p>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-reviews" aria-hidden="true">
+    <div class="card">
+      <label>口コミ一覧</label>
+      <div id="reviewsList" class="list-edit"></div>
+      <div class="addline"><button id="addReview" type="button">＋ 行を追加</button></div>
+      <p class="help">入力欄が空の行は保存時に自動で除外されます。</p>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-export" aria-hidden="true">
+    <div class="grid-1">
+      <div class="card">
+        <label>保存・書き出し</label>
+        <p class="help">「保存」はブラウザ内（localStorage）に保持します。編集内容の配布や納品には書き出しをご利用ください。</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <button class="btn primary" id="save2">保存</button>
+          <button class="btn" id="load2">読込</button>
+          <button class="btn" id="exportHTML">HTML書き出し</button>
+          <button class="btn" id="exportJSON">JSON出力</button>
+          <button class="btn warn" id="clearEmpty">空行を整理</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="dock">
+    <button class="btn ghost" id="goTop">上へ</button>
+    <div class="spacer"></div>
+    <button class="btn" id="btnLoad2">読込</button>
+    <button class="btn primary" id="btnSave2">保存</button>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">Saved</div>
+
+<script>
+(function(){
+  const ORIGIN = window.location.origin;
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const toast = $('#toast');
+
+  /* --- Tabs --- */
+  $$('.tab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const name = btn.dataset.tab;
+      $$('.tab').forEach(t=>t.setAttribute('aria-selected', t===btn ? 'true':'false'));
+      $$('.panel').forEach(p=>p.setAttribute('aria-hidden', p.id !== 'panel-'+name ? 'true':'false'));
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+
+  /* --- List helpers --- */
+  function makeListItem(val=''){
+    const wrap = document.createElement('div');
+    wrap.className='list-item';
+    const input = document.createElement('input');
+    input.type='text'; input.value=val||'';
+    const del = document.createElement('button');
+    del.type='button'; del.className='icon-btn'; del.textContent='削除';
+    del.addEventListener('click', ()=> wrap.remove());
+    wrap.append(input, del);
+    return wrap;
+  }
+  function collectList(container){
+    return Array.from(container.querySelectorAll('input'))
+      .map(i=>i.value.trim())
+      .filter(v=>v.length>0);
+  }
+  function fillList(container, items){
+    container.innerHTML='';
+    (items && items.length ? items : ['']).forEach(v=>container.appendChild(makeListItem(v)));
+  }
+
+  /* --- File -> DataURL --- */
+  function fileToDataURL(file){
+    return new Promise((res,rej)=>{
+      const fr=new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = rej;
+      fr.readAsDataURL(file);
+    });
+  }
+
+  /* --- Messaging to host --- */
+  function post(type, payload){ parent && parent.postMessage({type, payload}, ORIGIN); }
+  function showToast(msg){
+    toast.textContent = msg || 'OK';
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 1200);
+  }
+
+  /* --- Bind basic text fields --- */
+  const TEXT_KEYS = [
+    'site.logo','hero.kicker','hero.title',
+    'menu.1.title','menu.1.desc','menu.2.title','menu.2.desc','menu.3.title','menu.3.desc',
+    'menu.4.title','menu.4.desc','menu.5.title','menu.5.desc','menu.6.title','menu.6.desc',
+    'info.name','info.addr','info.open','info.seats','info.park'
+  ];
+  TEXT_KEYS.forEach(key=>{
+    const el = document.getElementById(key);
+    if(!el) return;
+    el.addEventListener('input', ()=> post('setText',{key, value: el.value}));
+  });
+
+  /* --- Bind image inputs --- */
+  $$('input[type="file"][data-file]').forEach(input=>{
+    input.addEventListener('change', async ()=>{
+      const key = input.dataset.file;
+      const file = input.files && input.files[0];
+      if(!file) return;
+      const dataURL = await fileToDataURL(file);
+      // preview
+      const img = document.getElementById(key);
+      if(img) img.src = dataURL;
+      // host update
+      post('setImage',{key, dataURL});
+    });
+  });
+
+  /* --- Lists (news / reviews) --- */
+  const newsBox = $('#newsList');
+  const revBox  = $('#reviewsList');
+  $('#addNews').addEventListener('click', ()=> newsBox.appendChild(makeListItem('')));
+  $('#addReview').addEventListener('click', ()=> revBox.appendChild(makeListItem('')));
+
+  /* --- Save / Load / Export --- */
+  function saveAll(){
+    // push lists first
+    post('setNews', {items: collectList(newsBox)});
+    post('setReviews', {items: collectList(revBox)});
+    // then save
+    post('saveAll', {});
+  }
+  $('#btnSave').addEventListener('click', saveAll);
+  $('#btnSave2').addEventListener('click', saveAll);
+  $('#save2').addEventListener('click', saveAll);
+
+  function loadAll(){ post('loadAll', {}); }
+  $('#btnLoad').addEventListener('click', loadAll);
+  $('#btnLoad2').addEventListener('click', loadAll);
+  $('#load2').addEventListener('click', loadAll);
+
+  $('#exportHTML').addEventListener('click', ()=> post('exportHTML', {}));
+  $('#exportJSON').addEventListener('click', ()=> post('exportJSON', {}));
+
+  /* --- Close / Prod --- */
+  $('#btnClose').addEventListener('click', ()=> post('close', {}));
+  $('#btnProd').addEventListener('click', ()=>{
+    // 親のURLから ?edit を外して再読込
+    try{
+      const url = new URL(parent.location.href);
+      url.searchParams.delete('edit');
+      parent.location.href = url.toString();
+    }catch(e){
+      // フォールバック：閉じるだけ
+      post('close', {});
+    }
+  });
+
+  $('#goTop').addEventListener('click', ()=> window.scrollTo({top:0,behavior:'smooth'}));
+  $('#clearEmpty').addEventListener('click', ()=>{
+    fillList(newsBox, collectList(newsBox));
+    fillList(revBox,  collectList(revBox));
+    showToast('空行を整理しました');
+  });
+
+  /* --- Receive from host --- */
+  window.addEventListener('message', (e)=>{
+    if (window.location.protocol !== 'file:' && e.origin !== ORIGIN) return;
+    const {type, payload} = e.data||{};
+    switch(type){
+      case 'hostReady':
+      case 'syncState':{
+        const all = payload || {};
+        const t = (all.text)||{};
+        TEXT_KEYS.forEach(key=>{
+          const el=document.getElementById(key);
+          if(el && t[key]!==undefined) el.value = t[key];
+        });
+        const imgs = (all.images)||{};
+        Object.keys(imgs).forEach(k=>{
+          const el=document.getElementById(k);
+          if(el && imgs[k]) el.src = imgs[k];
+        });
+        fillList(newsBox, all.news||[]);
+        fillList(revBox,  all.reviews||[]);
+        break;
+      }
+      case 'saved':
+        showToast(payload && payload.ok ? '保存しました' : '保存に失敗');
+        break;
+      case 'loaded':
+        if(payload && payload.ok){
+          const all = payload.data||{};
+          const t = (all.text)||{};
+          TEXT_KEYS.forEach(key=>{
+            const el=document.getElementById(key);
+            if(el && t[key]!==undefined) el.value = t[key];
+          });
+          const imgs = (all.images)||{};
+          Object.keys(imgs).forEach(k=>{
+            const el=document.getElementById(k);
+            if(el && imgs[k]) el.src = imgs[k];
+          });
+          fillList(newsBox, all.news||[]);
+          fillList(revBox,  all.reviews||[]);
+          showToast('読込しました');
+        }else{
+          showToast('保存データがありません');
+        }
+        break;
+    }
+  });
+
+  /* --- Tell host we're ready --- */
+  function editorReady(){ parent && parent.postMessage({type:'editorReady'}, ORIGIN); }
+  window.addEventListener('load', editorReady);
+})();
+</script>
+</body>
+</html>
